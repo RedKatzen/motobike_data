@@ -4,7 +4,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import views.Principal;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -15,26 +19,23 @@ import java.util.Properties;
 import java.util.stream.Stream; 
 import java.util.stream.Collectors;
 
+import connection.ConexaoDAO;
+
 public class Main {
     
 
-    private static String pathScriptInsert = "sql_scripts/insert_data.sql";
+   // private static String pathScriptInsert = "sql_scripts/insert_data.sql";
     
     public static void main(String[] args) {
         
-        String sqlScript = "CREATE TABLE fuel_motorbike_data (id INT AUTO_INCREMENT PRIMARY KEY, date DATE, kmTraveled DOUBLE, litersStocked DOUBLE, totalKm DOUBLE, averageLitersPerKm DOUBLE);";
+        String pathScriptInsert = "sql_scripts/insert_data.sql"; 
 
         Connection connection = null;
-           
-        String url = "jdbc:mysql://localhost:3306/mysql";
-        String user = "root";
-        String password = "root";
-        
+          
            try {
-               Class.forName("org.mariadb.jdbc.Driver");
+               connection = ConexaoDAO.conectaBD();
                
-               connection = DriverManager.getConnection(url, user, password);
-               
+            
                if(connection != null)
                    System.out.println("Conexão estabelecida!");
                
@@ -45,27 +46,24 @@ public class Main {
     //         main.setLocationRelativeTo(null);
     //         main.setVisible(true);
                
-               Statement statement = connection.createStatement();
+               //Statement statement = connection.createStatement();
                
-               connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+               //connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
                
-                Properties properties = new Properties();
-                properties.setProperty("user", user);
-                properties.setProperty("password", password);
-                properties.setProperty("transactionIsolation", "READ_COMMITTED");
+                //Properties properties = new Properties();
+                //properties.setProperty("user", user);
+                //properties.setProperty("password", password);
+                //properties.setProperty("transactionIsolation", "READ_COMMITTED");
                
             //   statement.executeUpdate(sqlScript);
                
             //    connection.commit();
                
             //   executeSqlScritps(statemente, pathScriptCreate);
-            //   executeSqlScritps(statemente, pathScriptInsert);
-               
-               System.out.println("Scripts SQL executados com sucesso!");
+               executeSqlScritps(connection, pathScriptInsert);
+               connection.close();
+            
     
-           } catch (ClassNotFoundException e) {
-               System.err.println("Driver do MySQL não encontrado");
-                e.printStackTrace();
            } catch (SQLException e){
                System.err.println("Erro ao realizar conexão");
                e.printStackTrace();
@@ -80,12 +78,23 @@ public class Main {
            }
     }
     
-    private static void executeSqlScritps(Statement statement, String scriptPath){
-        try (Stream<String> lines = Files.lines(Paths.get(scriptPath))) {
-            String sql = lines.collect(Collectors.joining(" "));
-            statement.executeUpdate(sql);
-        } catch (IOException  | SQLException e) {
+    private static void executeSqlScritps(Connection connection, String scriptPath) {
+        try (InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(scriptPath);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            
+            StringBuilder sql = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sql.append(line).append("\n");
+            }
+
+            try (Statement statement = connection.createStatement()) {
+                statement.executeUpdate(sql.toString());
+                System.out.println("Scripts SQL executados com sucesso!");
+            }
+        } catch (Exception e) {
             e.printStackTrace();
+            System.out.println("Erro ao executar script");
         }
     }
 }

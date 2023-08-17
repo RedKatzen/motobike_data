@@ -7,11 +7,11 @@ import javax.swing.JOptionPane;
 
 public class ConexaoDAO {
     
-    public Connection conectaBD(){
+    public static Connection conectaBD(){
         Connection conn = null;
         
         try {
-            String url = "jdbc:mysql://localhost:3306/bancoteste?user=root&password=";
+            String url = "jdbc:mysql://localhost:3306/bancoteste?user=svc_churchmanagement&password=abc123456!";
             conn = DriverManager.getConnection(url);
         } catch (SQLException e){
             JOptionPane.showMessageDialog(null, "ConexaoDAO" + e);
