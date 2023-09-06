@@ -1,14 +1,21 @@
 
 package views;
+import connection.ConexaoDAO;
 import control.ControlMotorbike;
 import infomotorbike.GeneralInfo;
 import java.awt.Dimension;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import javax.swing.JOptionPane;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Principal extends javax.swing.JFrame {
     ControlMotorbike cm = new ControlMotorbike();
+    Connection conn = null;
+    String sql = "INSERT INTO fuel_motorbike_data (date, kmTraveled, litersStocked, totalKm, averageLitersPerKm) VALUES (?, ?, ?, ?, ?);";
+    
     public Principal() {
         initComponents();
     }
@@ -208,12 +215,56 @@ public class Principal extends javax.swing.JFrame {
         info.setAverageLitersPerKm();
         
         if(cm.save(info)){
+            try {
+                conn = ConexaoDAO.conectaBD();
+                conn.setAutoCommit(true);
+
+                System.out.println(conn);
+            } catch(SQLException e){
+                System.err.println("Erro ao realizar conexão");
+                System.out.println("Message exception: "+e.getMessage());
+            }
+            
             JOptionPane.showMessageDialog(null, "Informações da moto cadastradas.");
             txfKmTraveled.setText("");
             txfLitersStocked.setText("");
             txfTotalKm.setText("");
-                       
             dateChooser.requestFocus();
+            
+            double kmTravelded = info.getKmTraveled();
+            double averageLitersPerKm = info.getAverageLitersPerKm();
+            double litersStocked = info.getLitersStocked();
+            double totalKm = info.getTotalKm();
+            String data = info.getData();
+            
+            try(PreparedStatement preparedStatement = conn.prepareStatement(sql)){
+                preparedStatement.setString(1, data);
+                preparedStatement.setDouble(2, kmTravelded);
+                preparedStatement.setDouble(3, litersStocked);
+                preparedStatement.setDouble(4, totalKm);
+                preparedStatement.setDouble(5, averageLitersPerKm);
+                
+                int linhasAfetadas = preparedStatement.executeUpdate();
+                if (linhasAfetadas > 0) {
+                    System.out.println("Inserção bem-sucedida!");
+                } else {
+                    System.out.println("Nenhuma linha inserida.");
+                }
+                
+            //    ScriptsSQL.executeSqlScritps(connection, sql);
+                
+            } catch(SQLException e){
+                System.out.println("Message exception: "+e.getMessage());
+                System.out.println("Erro ao executar inserção");
+            } finally{
+                try{
+                    conn.close();
+                } catch(SQLException e){
+                    System.out.println("Message exception: "+e.getMessage());
+                    System.out.println("Erro ao fechar a conexão");
+                }
+            }
+            
         } else {
             JOptionPane.showMessageDialog(null, "Erro ao cadastrar as informações da moto.");
         }

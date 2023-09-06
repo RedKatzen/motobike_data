@@ -7,9 +7,9 @@ import javax.swing.JOptionPane;
 
 public class ConexaoDAO {
     
+    public static Connection conn;
+    
     public static Connection conectaBD(){
-        Connection conn = null;
-        
         try {
             String url = "jdbc:mysql://localhost:3306/mysql?user=root&password=root";
             conn = DriverManager.getConnection(url);

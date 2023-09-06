@@ -1,47 +1,82 @@
 
 package views;
 
+import connection.ConexaoDAO;
 import control.ControlMotorbike;
 import infomotorbike.GeneralInfo;
-import java.awt.Dimension;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class ListarInfos extends javax.swing.JDialog {
 
-    /**
-     * Creates new form ListarInfos
-     */
-    ControlMotorbike cm;
+//    ControlMotorbike cm;
+    GeneralInfo info;
+    ArrayList<GeneralInfo> infos;
+    Connection conn = null;
+    String sql = "SELECT * FROM fuel_motorbike_data";
+    ResultSet rset = null;
+    
     public ListarInfos(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
     }
     public ListarInfos(java.awt.Frame parent, boolean modal, ControlMotorbike cm) {
         super(parent, modal);
-        this.cm = cm;
+//        this.cm = cm;
         initComponents();
         displayInfo();
     }
     
     private void displayInfo(){
-        ArrayList<GeneralInfo> infos = cm.returnAll(); 
         
-         // limpar tabela
-         for(int i = 0; i < infos.size(); i++){
-             tbInfos.setValueAt("", i, 0);
-             tbInfos.setValueAt("", i, 1);
-             tbInfos.setValueAt("", i, 2);
-             tbInfos.setValueAt("", i, 3);
-             tbInfos.setValueAt("", i, 4);
-         }
-         
-         // popular tabela
-        for(int i = 0; i < infos.size() && infos.get(i) != null; i++){
-            tbInfos.setValueAt(infos.get(i).getData(), i, 0);
-            tbInfos.setValueAt(infos.get(i).getKmTraveled(), i, 1);
-            tbInfos.setValueAt(infos.get(i).getLitersStocked(), i, 2);
-            tbInfos.setValueAt(infos.get(i).getTotalKm(), i, 3);
-            tbInfos.setValueAt(infos.get(i).getAverageLitersPerKm(), i, 4);
+        
+        try{
+            conn = ConexaoDAO.conectaBD();
+            conn.setAutoCommit(true);
+            
+            try(PreparedStatement preparedStatement = conn.prepareStatement(sql)){
+                infos = new ArrayList<>();
+                rset = preparedStatement.executeQuery();
+
+                while(rset.next()){
+                    info = new GeneralInfo();
+                    
+                    info.setData(rset.getString("date"));
+                    info.setKmTraveled(rset.getDouble("kmTraveled"));
+                    info.setLitersStocked(rset.getDouble("litersStocked"));
+                    info.setTotalKm(rset.getDouble("totalKm"));
+                    info.setAverageLitersPerKm();
+                    
+                    infos.add(info);
+                }
+                
+                // popular tabela
+                for(int i = 0; i < infos.size() && infos.get(i) != null; i++){
+                    tbInfos.setValueAt(infos.get(i).getData(), i, 0);
+                    tbInfos.setValueAt(infos.get(i).getKmTraveled(), i, 1);
+                    tbInfos.setValueAt(infos.get(i).getLitersStocked(), i, 2);
+                    tbInfos.setValueAt(infos.get(i).getTotalKm(), i, 3);
+                    tbInfos.setValueAt(infos.get(i).getAverageLitersPerKm(), i, 4);
+                }
+                
+                
+            } catch(SQLException e){
+                System.out.println("Message exception: "+e.getMessage());
+                System.out.println("Erro ao executar o SQL - listar infos");
+            }
+        } catch(SQLException e){
+            System.out.println("Exception message: "+e.getMessage());
+            System.out.println("Erro ao conectar ao database - listar info");
+        } finally {
+                try{
+                    conn.close();
+                } catch(SQLException e){
+                    System.out.println("Message exception: "+e.getMessage());
+                    System.out.println("Erro ao fechar a conexão");
+                }
         }
     }
 
